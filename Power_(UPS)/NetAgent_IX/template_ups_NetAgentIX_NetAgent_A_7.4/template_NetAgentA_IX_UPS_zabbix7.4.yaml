@@ -1,0 +1,844 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: a2beadb7d079436096f7a918ff664473
+      template: 'NetAgent UPS'
+      name: 'NetAgent UPS'
+      description: |
+        RFC1628_UPS_MIB.MIB
+        XPPC-MIB
+      readme: |
+        ## Setup
+        
+        Set `Threshold of ICMP packet loss` and `Threshold of the average ICMP response`
+      groups:
+        - name: Templates
+      items:
+        - uuid: de43fccc33c748df9313e2bf644b0ccd
+          name: 'ICMP ping'
+          type: SIMPLE
+          key: icmpping
+          delay: 5m
+          description: |
+            The host accessibility by ICMP ping.
+            
+            0 - ICMP ping fails;
+            1 - ICMP ping successful.
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: component
+              value: health
+            - tag: component
+              value: network
+        - uuid: 875a7139716049c5a5ab3efedaf412fd
+          name: 'ICMP loss'
+          type: SIMPLE
+          key: icmppingloss
+          delay: 5m
+          value_type: FLOAT
+          units: '%'
+          description: 'The percentage of lost packets.'
+          tags:
+            - tag: component
+              value: health
+            - tag: component
+              value: network
+        - uuid: 7ea4a2e71d104f698a6e099275589478
+          name: 'ICMP response time'
+          type: SIMPLE
+          key: icmppingsec
+          delay: 5m
+          value_type: FLOAT
+          units: s
+          description: 'The ICMP ping response time (in seconds).'
+          tags:
+            - tag: component
+              value: health
+            - tag: component
+              value: network
+        - uuid: 9924d051d3394418b991e7f3313f9aa4
+          name: 'Output Frequency'
+          type: SNMP_AGENT
+          snmp_oid: 'get[1.3.6.1.2.1.33.1.4.2.0]'
+          key: netAgentA.OutputFrequency
+          value_type: FLOAT
+          units: Hz
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+        - uuid: 1b3f617dc9cb499eb7ac9eb7219d6ef4
+          name: 'Agent Software Version'
+          type: SNMP_AGENT
+          snmp_oid: 'get[1.3.6.1.2.1.33.1.1.4.0]'
+          key: netAgentA.upsIdentAgentSoftwareVersion
+          value_type: TEXT
+        - uuid: e2c0de35a7ce4c98819316c41712a614
+          name: Manufacturer
+          type: SNMP_AGENT
+          snmp_oid: 'get[1.3.6.1.2.1.33.1.1.1.0]'
+          key: netAgentA.upsIdentManufacturer
+          value_type: TEXT
+          status: DISABLED
+        - uuid: 1fd8623308d543ec90fc686ac508a2b1
+          name: Model
+          type: SNMP_AGENT
+          snmp_oid: 'get[1.3.6.1.2.1.33.1.1.2.0]'
+          key: netAgentA.upsIdentModel
+          value_type: TEXT
+          status: DISABLED
+        - uuid: c5d874faf60f4d8a813b9ab253b381d7
+          name: Name
+          type: SNMP_AGENT
+          snmp_oid: 'get[1.3.6.1.2.1.33.1.1.5.0]'
+          key: netAgentA.upsIdentName
+          value_type: TEXT
+          status: DISABLED
+        - uuid: e1e721fda46b4cefa70f686466d3138b
+          name: 'UPS Software Version'
+          type: SNMP_AGENT
+          snmp_oid: 'get[1.3.6.1.2.1.33.1.1.3.0]'
+          key: netAgentA.upsIdentUPSSoftwareVersion
+          value_type: TEXT
+        - uuid: 8fc4ed4e5f0c406c9ae83dcee733eb82
+          name: 'Number of Lines / Phases on Output'
+          type: SNMP_AGENT
+          snmp_oid: 'get[1.3.6.1.2.1.33.1.4.3.0]'
+          key: NetAgentA.upsOutputNumLines
+          valuemap:
+            name: 'RFC1628_UPS_MIB:upsOutputNumLines'
+          tags:
+            - tag: UPS
+              value: type
+        - uuid: a5d1002e60ce426ba20b9d2593069cb7
+          name: 'UPS Base Output Status'
+          type: SNMP_AGENT
+          snmp_oid: 'get[1.3.6.1.4.1.935.1.1.1.4.1.1.0]'
+          key: upsBaseOutputStatus
+          valuemap:
+            name: 'XPPC-MIB:upsBaseOutputStatus'
+      discovery_rules:
+        - uuid: 9a1daac53e2a42b0ada399b2af57977a
+          name: 'Battery group'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},1.3.6.1.2.1.33.1.2.1]'
+          key: netAgentA.upsBatteryStatus
+          delay: 1d
+          lifetime: 30d
+          description:  |
+                
+                               
+         item_prototypes:
+            - uuid: 886659a36d9a47d5a7efe7c8e935c334
+              name: 'Bateries group{#SNMPINDEX} Current'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.2.1.{#SNMPINDEX}'
+              key: 'netAgentA.upsBatteryCurrent[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: 'A DC'
+              description: 'The present battery current.'
+              valuemap:
+                name: 'RFC1628_UPS_MIB.MIB:upsBatteryStatus'
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.1'
+              tags:
+                - tag: component
+                  value: battery
+            - uuid: 6bc669ca71104006a60c7d44c65ff718
+              name: 'Bateries group{#SNMPINDEX} Status'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.2.1.{#SNMPINDEX}'
+              key: 'netAgentA.upsBatteryStatus[{#SNMPINDEX}]'
+              description: |
+                Support of the values unknown(1) and
+                               batteryDepleted(4) is not required.
+              valuemap:
+                name: 'RFC1628_UPS_MIB.MIB:upsBatteryStatus'
+              tags:
+                - tag: component
+                  value: battery
+            - uuid: efd1fa168bb04b3898874a092ea1d60d
+              name: 'Bateries group{#SNMPINDEX}  Temperature'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.2.7.{#SNMPINDEX}'
+              key: 'netAgentA.upsBatteryTemperature[{#SNMPINDEX}]'
+              units: °C
+              description: |
+                The ambient temperature at or near the UPS Battery
+                               casing.
+              valuemap:
+                name: 'RFC1628_UPS_MIB.MIB:upsBatteryStatus'
+              tags:
+                - tag: component
+                  value: battery
+            - uuid: fa669c537f0140769f33241fb6576ff4
+              name: 'Bateries group{#SNMPINDEX} Voltage'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.2.5.{#SNMPINDEX}'
+              key: 'netAgentA.upsBatteryVoltage[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: 'Volt DC'
+              description: 'The magnitude of the present battery voltage.'
+              valuemap:
+                name: 'RFC1628_UPS_MIB.MIB:upsBatteryStatus'
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.1'
+              tags:
+                - tag: component
+                  value: battery
+            - uuid: 653c377b0705476aba292538dff44d64
+              name: 'Bateries group{#SNMPINDEX} Estimated Charge Remaining'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.2.4.{#SNMPINDEX}'
+              key: 'netAgentA.upsEstimatedChargeRemaining[{#SNMPINDEX}]'
+              units: '%'
+              description: 'An estimate of the battery charge remaining expressed as a percent of full charge.'
+              valuemap:
+                name: 'RFC1628_UPS_MIB.MIB:upsBatteryStatus'
+              tags:
+                - tag: component
+                  value: battery
+            - uuid: 30c4642487854d519522246a28e2fa9c
+              name: 'bateries group{#SNMPINDEX} Estimated Minutes Remaining'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.2.3.{#SNMPINDEX}'
+              key: 'netAgentA.upsEstimatedMinutesRemaining[{#SNMPINDEX}]'
+              units: minutes
+              description: |
+                An estimate of the time to battery charge depletion
+                               under the present load conditions if the utility power
+                               is off and remains off, or if it were to be lost and
+                               remain off.
+              valuemap:
+                name: 'RFC1628_UPS_MIB.MIB:upsBatteryStatus'
+              tags:
+                - tag: component
+                  value: battery
+            - uuid: 215d2af4b4a74778bac07cef598de712
+              name: 'Bateries group{#SNMPINDEX}  seconds'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.2.2.{#SNMPINDEX}'
+              key: 'netAgentA.upsSecondsOnBattery[{#SNMPINDEX}]'
+              units: seconds
+              description: |
+                The UPS is operating on battery power.  This trap is
+                               persistent and is resent at one minute intervals until
+                               the UPS either turns off or is no longer running on
+                               battery.
+              valuemap:
+                name: 'RFC1628_UPS_MIB.MIB:upsBatteryStatus'
+              tags:
+                - tag: component
+                  value: battery
+        - uuid: df5ec233d1a142fb8a70719b1875be72
+          name: 'Input / output lines'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},1.3.6.1.2.1.33.1.3.3.1.2]'
+          key: netAgentA.upsInputOutput
+          delay: 1d
+          lifetime: 30d
+          item_prototypes:
+            - uuid: e1b35c022cbe4d288ed617f1f1906a69
+              name: 'Input Phase {#SNMPINDEX} Current'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.3.3.1.4.{#SNMPINDEX}'
+              key: 'netAgentA.upsInputCurrent[{#SNMPINDEX}]'
+              units: 'A RMS'
+              description: 'The magnitude of the present input current.'
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.1'
+              tags:
+                - tag: UPS
+                  value: Input
+            - uuid: cdfbc0566e074bb7bc918ac32461c4a9
+              name: 'Input Phase {#SNMPINDEX} Frequency'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.3.3.1.2.{#SNMPINDEX}'
+              key: 'netAgentA.upsInputFrequency[{#SNMPINDEX}]'
+              units: Hz
+              description: 'The present input frequency.'
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.1'
+              tags:
+                - tag: UPS
+                  value: Input
+            - uuid: 7a90e9cf33c44641af5e9f750b8e682e
+              name: 'Input Phase {#SNMPINDEX} True Power'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.3.3.1.3.{#SNMPINDEX}'
+              key: 'netAgentA.upsInputTruePower[{#SNMPINDEX}]'
+              units: W
+              description: 'The magnitude of the present input true power.'
+              tags:
+                - tag: UPS
+                  value: Input
+            - uuid: 7a5d64f490654dc798bd0b48217448c3
+              name: 'Input Phase {#SNMPINDEX} Voltage'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.3.3.1.3.{#SNMPINDEX}'
+              key: 'netAgentA.upsInputVoltage[{#SNMPINDEX}]'
+              units: 'V RMS'
+              description: 'The magnitude of the present input voltage.'
+              tags:
+                - tag: UPS
+                  value: Input
+            - uuid: d8d1ae67d67f466da34f70961412a132
+              name: 'Output Phase {#SNMPINDEX} Current'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.4.4.1.3.{#SNMPINDEX}'
+              key: 'netAgentA.upsOutputCurrent[{#SNMPINDEX}]'
+              units: 'A RMS'
+              description: 'The magnitude of the present input Output.'
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '0.1'
+              tags:
+                - tag: UPS
+                  value: Output
+            - uuid: 3f00f6079cc84c00acec96938c1a11d3
+              name: 'Output Phase {#SNMPINDEX} Percent Load'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.4.4.1.5.{#SNMPINDEX}'
+              key: 'netAgentA.upsOutputPercentLoad[{#SNMPINDEX}]'
+              units: '%'
+              description: |
+                The percentage of the UPS power capacity presently
+                               being used on this output line, i.e., the greater of
+                               the percent load of true power capacity and the
+                               percent load of VA
+              tags:
+                - tag: UPS
+                  value: Output
+            - uuid: 0c523512d1eb429b8c48425269ef454c
+              name: 'Output Phase {#SNMPINDEX} Power'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.4.4.1.4.{#SNMPINDEX}'
+              key: 'netAgentA.upsOutputPower[{#SNMPINDEX}]'
+              units: W
+              description: 'The present output true power.'
+              tags:
+                - tag: UPS
+                  value: Output
+            - uuid: ec792255cf71429c9e0ad52ddb3b577a
+              name: 'Output Phase {#SNMPINDEX} Voltage'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.2.1.33.1.4.4.1.2.{#SNMPINDEX}'
+              key: 'netAgentA.upsOutputVoltage[{#SNMPINDEX}]'
+              units: 'V RMS'
+              description: 'The present Output Voltage.'
+              tags:
+                - tag: UPS
+                  value: Output
+        - uuid: 6242ee0e6c6242c4af224f8a2901e660
+          name: 'Fault Status Bypass Breaker'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},1.3.6.1.4.1.935.1.1.1.8.7.3]'
+          key: netAgentA.upsThreePhaseFaultStatusBypassBreaker
+          delay: 1d
+          lifetime: 30d
+          item_prototypes:
+            - uuid: fd448fd36726474faa464d754ec54e58
+              name: 'Fault Status Bypass Breaker {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.935.1.1.1.8.7.3.{#SNMPINDEX}'
+              key: 'netAgentA.upsThreePhaseFaultStatusBypassBreaker[{#SNMPINDEX}]'
+              valuemap:
+                name: 'XPPC-MIB:upsThreePhaseFaultStatusGrp'
+              tags:
+                - tag: UPS
+                  value: errors
+        - uuid: 63782fc0110d46e7a18bdc22ae00e21b
+          name: 'Fault Status Emergency Stop'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},1.3.6.1.4.1.935.1.1.1.8.7.1]'
+          key: netAgentA.upsThreePhaseFaultStatusEmergencyStop
+          delay: 1d
+          lifetime: 30d
+          item_prototypes:
+            - uuid: ba78e622d20e4e368f27ac469225a2b3
+              name: 'Fault Status Emergency Stop {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.935.1.1.1.8.7.1.{#SNMPINDEX}'
+              key: 'netAgentA.upsThreePhaseFaultStatusEmergencyStop[{#SNMPINDEX}]'
+              valuemap:
+                name: 'XPPC-MIB:upsThreePhaseFaultStatusGrp'
+              tags:
+                - tag: UPS
+                  value: errors
+        - uuid: c0ccd574e2a54f498c825125a8847dc4
+          name: 'Fault Status High DC Shutdown'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},1.3.6.1.4.1.935.1.1.1.8.7.2]'
+          key: netAgentA.upsThreePhaseFaultStatusHighDCShutdown
+          delay: 1d
+          lifetime: 30d
+          item_prototypes:
+            - uuid: 7552d934532e4f6a96a5f8be9ac8c595
+              name: 'Fault Status High DC Shutdown {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.935.1.1.1.8.7.2.{#SNMPINDEX}'
+              key: 'netAgentA.upsThreePhaseFaultStatusHighDCShutdown[{#SNMPINDEX}]'
+              valuemap:
+                name: 'XPPC-MIB:upsThreePhaseFaultStatusGrp'
+              tags:
+                - tag: UPS
+                  value: errors
+        - uuid: 06f4f4059d61462aa0bcaf51d3ccdd5c
+          name: 'Fault Status Inverter Output Fail'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},1.3.6.1.4.1.935.1.1.1.8.7.5]'
+          key: netAgentA.upsThreePhaseFaultStatusInverterOutputFail
+          delay: 1d
+          lifetime: 30d
+          item_prototypes:
+            - uuid: 1c51560694114aa7880d1517858109a2
+              name: 'Fault Status Inverter Output Fail{#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.935.1.1.1.8.7.5.{#SNMPINDEX}'
+              key: 'netAgentA.upsThreePhaseFaultStatusInverterOutputFail[{#SNMPINDEX}]'
+              valuemap:
+                name: 'XPPC-MIB:upsThreePhaseFaultStatusGrp'
+              tags:
+                - tag: UPS
+                  value: errors
+        - uuid: 86213ac3a42f4564b7952c8c758a6c0b
+          name: 'Fault Status Overload'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},1.3.6.1.4.1.935.1.1.1.8.7.4]'
+          key: netAgentA.upsThreePhaseFaultStatusOverLoad
+          delay: 1d
+          lifetime: 30d
+          item_prototypes:
+            - uuid: ab105395ff574be0b319376009b9f572
+              name: 'Fault Status OverLoad{#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.935.1.1.1.8.7.4.{#SNMPINDEX}'
+              key: 'netAgentA.upsThreePhaseFaultStatusOverLoad[{#SNMPINDEX}]'
+              valuemap:
+                name: 'XPPC-MIB:upsThreePhaseFaultStatusGrp'
+              tags:
+                - tag: UPS
+                  value: errors
+        - uuid: cb0f10bcf74249f2918f1ea28401dced
+          name: 'Fault Status Over Temperature'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},1.3.6.1.4.1.935.1.1.1.8.7.6]'
+          key: netAgentA.upsThreePhaseFaultStatusOverTemperature
+          delay: 1d
+          lifetime: 30d
+          item_prototypes:
+            - uuid: 3a2dc7f2c6e04ea3943dc4ad8ae2adf4
+              name: 'Fault Status Inverter Over Temperature{#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.935.1.1.1.8.7.6.{#SNMPINDEX}'
+              key: 'netAgentA.upsThreePhaseFaultStatusOverTemperature[{#SNMPINDEX}]'
+              valuemap:
+                name: 'XPPC-MIB:upsThreePhaseFaultStatusGrp'
+              tags:
+                - tag: UPS
+                  value: errors
+        - uuid: ef7d1d8fa57347669a68e3f8f1cdc1e1
+          name: 'Fault Status Short Circuit'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},1.3.6.1.4.1.935.1.1.1.8.7.7]'
+          key: netAgentA.upsThreePhaseFaultStatusShortCircuit
+          delay: 1d
+          lifetime: 30d
+          item_prototypes:
+            - uuid: 8ccca60883b2400c80b36529f2433184
+              name: 'Fault Status Inverter Short Circuit{#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.935.1.1.1.8.7.7.{#SNMPINDEX}'
+              key: 'netAgentA.upsThreePhaseFaultStatusShortCircuit[{#SNMPINDEX}]'
+              valuemap:
+                name: 'XPPC-MIB:upsThreePhaseFaultStatusGrp'
+              tags:
+                - tag: UPS
+                  value: errors
+      tags:
+        - tag: class
+          value: UPS
+      macros:
+        - macro: '{$ICMP_LOSS_WARN}'
+          value: '20'
+          description: 'Warning threshold of ICMP packet loss in %.'
+          config:
+            type: TEXT
+            priority: '1'
+            section_name: Thresholds
+            label: 'Threshold of ICMP packet loss'
+            description: 'Warning threshold of ICMP packet loss in %. In the range from 0 to 100 inclusive.'
+            regex: '^-?([0-9]+|(([0-9]+)\.([0-9]+)))$'
+        - macro: '{$ICMP_RESPONSE_TIME_WARN}'
+          value: '0.15'
+          description: 'Warning threshold of the average ICMP response time in seconds.'
+          config:
+            type: TEXT
+            priority: '2'
+            section_name: Thresholds
+            label: 'Threshold of the average ICMP response'
+            description: 'Warning threshold of the average ICMP response time in seconds. No less than 0.'
+            regex: '^-?([0-9]+|(([0-9]+)\.([0-9]+)))$'
+      dashboards:
+        - uuid: 85cf5536bcf1452bb4b53c2b7c840f91
+          name: NetAgent
+          pages:
+            - name: UPS
+              widgets:
+                - type: honeycomb
+                  name: 'UPS errors'
+                  width: '24'
+                  height: '5'
+                  fields:
+                    - type: STRING
+                      name: items.0
+                      value: '*status*'
+                    - type: STRING
+                      name: primary_label
+                      value: '{ITEM.NAME}'
+                    - type: STRING
+                      name: reference
+                      value: JUCDR
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '1'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: 00FF00
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '2'
+                    - type: STRING
+                      name: thresholds.2.color
+                      value: FFC859
+                    - type: STRING
+                      name: thresholds.2.threshold
+                      value: '3'
+                    - type: STRING
+                      name: thresholds.3.color
+                      value: 7499FF
+                    - type: STRING
+                      name: thresholds.3.threshold
+                      value: '4'
+                    - type: STRING
+                      name: thresholds.4.color
+                      value: FFC859
+                    - type: STRING
+                      name: thresholds.4.threshold
+                      value: '5'
+                    - type: STRING
+                      name: thresholds.5.color
+                      value: E97659
+                    - type: STRING
+                      name: thresholds.5.threshold
+                      value: '6'
+                    - type: STRING
+                      name: thresholds.6.color
+                      value: E97659
+                    - type: STRING
+                      name: thresholds.6.threshold
+                      value: '14'
+                    - type: STRING
+                      name: thresholds.7.color
+                      value: 00FF00
+                    - type: STRING
+                      name: thresholds.7.threshold
+                      value: '16'
+                - type: svggraph
+                  name: 'Output % Load'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: INTEGER
+                      name: ds.0.color_palette
+                      value: '4'
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: 'Output Phase * Percent Load'
+                    - type: INTEGER
+                      name: ds.0.width
+                      value: '2'
+                    - type: INTEGER
+                      name: legend_statistic
+                      value: '1'
+                    - type: STRING
+                      name: reference
+                      value: KWYVK
+                    - type: INTEGER
+                      name: righty
+                      value: '0'
+                    - type: INTEGER
+                      name: source
+                      value: '1'
+                - type: svggraph
+                  name: 'Input Output Voltage'
+                  x: '24'
+                  width: '48'
+                  height: '5'
+                  fields:
+                    - type: INTEGER
+                      name: ds.0.color_palette
+                      value: '4'
+                    - type: STRING
+                      name: ds.0.data_set_label
+                      value: Input
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: 'Input Phase * Voltage'
+                    - type: INTEGER
+                      name: ds.1.color_palette
+                      value: '9'
+                    - type: STRING
+                      name: ds.1.data_set_label
+                      value: Output
+                    - type: STRING
+                      name: ds.1.items.0
+                      value: 'Output Phase * Voltage'
+                    - type: INTEGER
+                      name: legend_statistic
+                      value: '1'
+                    - type: STRING
+                      name: reference
+                      value: SJQYZ
+                    - type: INTEGER
+                      name: righty
+                      value: '0'
+                    - type: INTEGER
+                      name: source
+                      value: '1'
+                - type: svggraph
+                  name: 'Input Ouput Frequency'
+                  x: '36'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: INTEGER
+                      name: ds.0.color_palette
+                      value: '4'
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: 'Input Phase * Frequency'
+                    - type: INTEGER
+                      name: ds.0.width
+                      value: '2'
+                    - type: STRING
+                      name: ds.1.color
+                      value: FFD54F
+                    - type: STRING
+                      name: ds.1.items.0
+                      value: 'Output Frequency'
+                    - type: INTEGER
+                      name: ds.1.width
+                      value: '2'
+                    - type: INTEGER
+                      name: legend_statistic
+                      value: '1'
+                    - type: STRING
+                      name: reference
+                      value: BISAF
+                    - type: INTEGER
+                      name: righty
+                      value: '0'
+                    - type: INTEGER
+                      name: source
+                      value: '1'
+            - name: ping
+              widgets:
+                - type: item
+                  name: Etat
+                  width: '13'
+                  height: '3'
+                  fields:
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'NetAgent UPS'
+                        key: icmpping
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: 4CAF50
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '1'
+                - type: graph
+                  'y': '3'
+                  width: '72'
+                  height: '7'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'NetAgent UPS'
+                        name: 'ICMP response time'
+                    - type: STRING
+                      name: reference
+                      value: MTFKV
+                    - type: STRING
+                      name: time_period.from
+                      value: now-4h
+                    - type: STRING
+                      name: time_period.to
+                      value: now
+                - type: item
+                  name: 'ICMP response time'
+                  x: '14'
+                  width: '28'
+                  height: '3'
+                  fields:
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '1'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'NetAgent UPS'
+                        key: icmppingsec
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: show.2
+                      value: '3'
+                    - type: INTEGER
+                      name: show.3
+                      value: '4'
+                    - type: INTEGER
+                      name: show.4
+                      value: '5'
+                    - type: INTEGER
+                      name: value_h_pos
+                      value: '0'
+                - type: item
+                  name: 'ICMP loss'
+                  x: '43'
+                  width: '29'
+                  height: '3'
+                  fields:
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '1'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'NetAgent UPS'
+                        key: icmppingloss
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: show.2
+                      value: '3'
+                    - type: INTEGER
+                      name: show.3
+                      value: '4'
+                    - type: INTEGER
+                      name: show.4
+                      value: '5'
+                    - type: INTEGER
+                      name: value_h_pos
+                      value: '0'
+      valuemaps:
+        - uuid: 1d0749f030fd4dad9ff5049450731614
+          name: 'RFC1628_UPS_MIB.MIB:upsBatteryStatus'
+          mappings:
+            - value: '1'
+              newvalue: unknown
+            - value: '2'
+              newvalue: batteryNormal
+            - value: '3'
+              newvalue: batteryLow
+            - value: '4'
+              newvalue: batteryDepleted
+        - uuid: 268c9608c4f3473993b840ca8b2cb635
+          name: 'RFC1628_UPS_MIB:upsOutputNumLines'
+          mappings:
+            - value: '1'
+              newvalue: monophased
+            - value: '3'
+              newvalue: treephased
+            - value: '4'
+              newvalue: 'treephased + neutre'
+        - uuid: 8f26cfef531f472093d76bc90dd84873
+          name: 'Service state'
+          mappings:
+            - value: '0'
+              newvalue: Down
+            - value: '1'
+              newvalue: Up
+        - uuid: dd9f3345c0ee416486b0431746d233a1
+          name: 'XPPC-MIB:upsBaseOutputStatus'
+          mappings:
+            - value: '1'
+              newvalue: unknown
+            - value: '2'
+              newvalue: onLine
+            - value: '3'
+              newvalue: onBattery
+            - value: '4'
+              newvalue: onBoost
+            - value: '5'
+              newvalue: sleeping
+            - value: '6'
+              newvalue: onBypass
+        - uuid: 1177309c22424cd3b871da00d097d2ab
+          name: 'XPPC-MIB:upsThreePhaseFaultStatusGrp'
+          mappings:
+            - value: '16'
+              newvalue: 'no'
+            - value: '14'
+              newvalue: 'yes'
+  graphs:
+    - uuid: 72795b8a55034eec8baea57aa5da8abf
+      name: 'ICMP loss'
+      yaxismax: '0'
+      graph_items:
+        - color: FF0000
+          calc_fnc: ALL
+          item:
+            host: 'NetAgent UPS'
+            key: icmppingloss
+    - uuid: 3466c5c995074c35b61f5965951e76b6
+      name: 'ICMP response time'
+      yaxismax: '0'
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: 'NetAgent UPS'
+            key: icmppingsec
