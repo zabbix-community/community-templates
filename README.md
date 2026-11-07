@@ -1,4 +1,8 @@
-# Zabbix community templates
+# About this Fork
+
+> [!CAUTION]
+> **This repository has been archived** because the original repository from which this fork was created has begun receiving contributions again and is under active development.
+> Visit: https://github.com/zabbix/community-templates
 
 ## A place for community driven integrations with Zabbix
 
